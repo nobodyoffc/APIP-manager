@@ -1,6 +1,7 @@
 package Service;
 
-public class OpData {
+public class Data {
+
 
 	private String stdName;
 	private String[] localNames;
@@ -10,12 +11,11 @@ public class OpData {
 	private String pubKeyAdmin;
 	private String[] protocols;
 	private String[] codes;
-	private Object params;
+	private Params params;
 	private String closeStatement;
 	
 	private String sid;
 	private String op;
-	
 	public String getStdName() {
 		return stdName;
 	}
@@ -64,10 +64,10 @@ public class OpData {
 	public void setCodes(String[] codes) {
 		this.codes = codes;
 	}
-	public Object getParams() {
+	public Params getParams() {
 		return params;
 	}
-	public void setParams(Object params) {
+	public void setParams(Params params) {
 		this.params = params;
 	}
 	public String getCloseStatement() {

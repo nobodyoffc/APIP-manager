@@ -1,4 +1,5 @@
-package start;
+package startTest;
+
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,14 +17,14 @@ import Users.Users;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import esClient.StartClient;
+import start.Configer;
+import startTest.RunService;
 
 
-public class Start {
-	public static long CddCheckHeight=2000000;
-	public static long CddRequired=1;
+public class StartTest {
 	
-	private static int MenuItemsNum =6;
-	private static final Logger log = LoggerFactory.getLogger(Start.class);
+	private static int MenuItemsNum =7;
+	private static final Logger log = LoggerFactory.getLogger(StartTest.class);
 	private static StartClient startClient = new StartClient();
 	
 	public static void main(String[] args)throws Exception{
@@ -53,7 +54,7 @@ public class Start {
 			int choice = choose(sc);
 
 			switch(choice) {
-			case 1:
+			case 1: //Create HTTP client
 				if(configer.getIp()==null || configer.getPort() == 0 || configer.getPath()==null) {
 					configer.configHttp(sc,br);
 					configer.initial();
@@ -73,7 +74,7 @@ public class Start {
 					System.out.println("\n******!Create ES client failed!******\n");
 				}
 				break;
-			case 2:
+			case 2: //Create HTTPS client
 				if(configer.getIp()==null || configer.getPort() == 0|| configer.getUsername()==null|| configer.getPath()==null) {
 					configer.configHttps(sc,br);
 					configer.initial();
@@ -93,16 +94,18 @@ public class Start {
 					System.out.println("\n******!Create ES client failed!******\n");
 				}
 				break;
-			case 3: 
+			case 3: //Manage service
 				if(esClient==null) {
 					System.out.println("Create a Java client for ES first.");
 					break;
 				}
 				Operator operator= new Operator();
 				
-				operator.menu(sc);
+				operator.menu(esClient, sc, br);
 				
-			case 4: 
+				break;
+				
+			case 4: //Manage finance
 				if(esClient==null) {
 					System.out.println("Create a Java client for ES first.");
 					break;
@@ -113,7 +116,7 @@ public class Start {
 				finance.menu(sc);
 				
 				break;
-			case 5: 
+			case 5: //Manage users
 				if(esClient==null) {
 					System.out.println("Create a Java client for ES first.");
 					break;
@@ -124,7 +127,7 @@ public class Start {
 				
 				break;
 				
-			case 6: 
+			case 6: //Run service
 				if(esClient==null) {
 					System.out.println("Create a Java client for ES first.");
 					break;
@@ -157,7 +160,7 @@ public class Start {
 		br.close();
 	}
 	
-	private static int choose(Scanner sc) throws IOException {
+	public static int choose(Scanner sc) throws IOException {
 		System.out.println("\nInput the number you want to do:\n");
 		int choice = 0;
 		while(true) {

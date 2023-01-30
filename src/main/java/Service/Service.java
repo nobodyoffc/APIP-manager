@@ -11,7 +11,7 @@ public class Service {
 	private String pubKeyAdmin;
 	private String[] protocols;
 	private String[] codes;
-	private Object params;
+	private Params params;
 	private String owner;
 	
 	private long birthTime;
@@ -24,7 +24,6 @@ public class Service {
 	private boolean active;
 	private boolean closed;
 	private String closeStatement;
-	
 	public String getSid() {
 		return sid;
 	}
@@ -67,11 +66,29 @@ public class Service {
 	public void setPubKeyAdmin(String pubKeyAdmin) {
 		this.pubKeyAdmin = pubKeyAdmin;
 	}
+	public String[] getProtocols() {
+		return protocols;
+	}
+	public void setProtocols(String[] protocols) {
+		this.protocols = protocols;
+	}
+	public String[] getCodes() {
+		return codes;
+	}
+	public void setCodes(String[] codes) {
+		this.codes = codes;
+	}
+	public Params getParams() {
+		return params;
+	}
+	public void setParams(Params params) {
+		this.params = params;
+	}
 	public String getOwner() {
 		return owner;
 	}
-	public void setOwner(String signer) {
-		this.owner = signer;
+	public void setOwner(String owner) {
+		this.owner = owner;
 	}
 	public long getBirthTime() {
 		return birthTime;
@@ -120,24 +137,6 @@ public class Service {
 	}
 	public void setActive(boolean active) {
 		this.active = active;
-	}
-	public String[] getProtocols() {
-		return protocols;
-	}
-	public void setProtocols(String[] protocols) {
-		this.protocols = protocols;
-	}
-	public Object getParams() {
-		return params;
-	}
-	public void setParams(Object params) {
-		this.params = params;
-	}
-	public String[] getCodes() {
-		return codes;
-	}
-	public void setCodes(String[] codes) {
-		this.codes = codes;
 	}
 	public boolean isClosed() {
 		return closed;
