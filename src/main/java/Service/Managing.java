@@ -3,6 +3,7 @@ package Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 import com.google.gson.Gson;
@@ -11,10 +12,11 @@ import com.google.gson.GsonBuilder;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.GetResponse;
+import redis.clients.jedis.Jedis;
 import start.Indices;
 import start.Start;
 
-public class Operator {
+public class Managing {
 	
 	public void menu(ElasticsearchClient esClient, Scanner sc,BufferedReader br) throws IOException {
 		
@@ -28,7 +30,7 @@ public class Operator {
 				+"	0 Return"
 				);	
 		
-		int choice = Start.choose(sc);
+		int choice = Start.choose(sc, 5);
 
 		switch(choice) {
 		case 1:
@@ -56,6 +58,21 @@ public class Operator {
 
 	}
 
+	private void setting(Params params) {
+		// TODO Auto-generated method stub
+		Jedis jedis = new Jedis();
+		HashMap<String,String> paramsMap = new HashMap<String,String>();
+		paramsMap.put("urlHead", params.getUrlHead());
+		paramsMap.put("currency", params.getCurrency());
+		paramsMap.put("account", params.getAccount());
+		paramsMap.put("pricePerRequest", String.valueOf(params.getPricePerRequest()));
+		paramsMap.put("minPayment", String.valueOf(params.getMinPayment()));
+		paramsMap.put("sessonDays", String.valueOf(params.getSessonDays()));
+		
+		jedis.hmset("params", paramsMap);
+		jedis.close();
+	}
+
 	private void publish(BufferedReader br) throws IOException {
 		System.out.println("To publish a new service.");
 		
@@ -70,51 +87,99 @@ public class Operator {
 		System.out.println("Input the English name of your service:");	
 		data.setStdName(br.readLine());
 		
-		String ask = "Input the local names of your service, if you want. Input 'enter' to end :";
-		String[] localNames = inputStringArray(br,ask);
+		String ask = "Input the local names of your service, if you want. Press enter to end :";
+		String[] localNames = inputStringArray(br,ask,0);
 		if(localNames.length!=0) data.setLocalNames(localNames);
 
-		System.out.println("Input the description of your service if you want.Input 'enter' to ignore:");	
+		System.out.println("Input the description of your service if you want.Press enter to ignore:");	
 		String str = br.readLine();
 		if(!str.equals(""))data.setDesc(str);
 		
 		String[] types = {"APIP","FEIP"};
 		data.setTypes(types);
 		
-		ask = "Input the URLs of your service, if you want. Input 'enter' to end :";
-		String[] urls = inputStringArray(br,ask);
+		ask = "Input the URLs of your service, if you want. Press enter to end :";
+		String[] urls = inputStringArray(br,ask,0);
 		if(urls.length!=0)data.setUrls(urls);
 		
-		System.out.println("Input the public key of the administrator for your service if you want.Input 'enter' to ignore:");	
-		str = br.readLine();
-		if(!str.equals(""))data.setPubKeyAdmin(str);
-
-		ask = "Input the PIDs of the PIDs your service using, if you want. Input 'enter' to end :";
-		String[] protocols = inputStringArray(br,ask);
+		System.out.println("Input the public key of the administrator for your service if you want. Press enter to ignore:");	
+		while(true) {
+			str = br.readLine();
+			if("".equals(str)) {
+				break;
+			}else if(Tools.Address.isValidPubKey(str)) {
+					data.setPubKeyAdmin(str);
+					break;
+			}else {
+				System.out.println("\nThis isn't a public key. Input again: ");
+				continue;
+			}
+		}
+		
+		ask = "Input the PIDs of the PIDs your service using, if you want. Press enter to end :";
+		String[] protocols = inputStringArray(br,ask,64);
 		if(protocols.length!=0)data.setProtocols(protocols);
 		
 		System.out.println("Input the head of the URL being requested for your service:");	
 		str = br.readLine();
 		if(!str.equals(""))params.setUrlHead(str);
 		
-		System.out.println("Input the currency you acceptting for your service, if you need. Input 'enter' to ignore:");
+		System.out.println("Input the currency you acceptting for your service, if you need. Press enter to ignore:");
 		str = br.readLine();
 		if(!str.equals(""))params.setCurrency(str);
 		
-		System.out.println("Input the account to recieve payments, if you need. Input 'enter' to ignore:");
+		System.out.println("Input the account to recieve payments, if you need. Press enter to ignore:");
 		str = br.readLine();
 		if(!str.equals(""))params.setAccount(str);
 
-		System.out.println("Input the price per request of your service, if you need. Input 'enter' to ignore:");
-		str = br.readLine();
-		if(!str.equals(""))params.setPricePerRequest(str);
+		System.out.println("Input the price per request of your service, if you need. Press enter to ignore:");
+		float flo = 0;
+		while(true) {
+			str = br.readLine();
+			if(!str.equals("")) {
+				try {
+					flo = Float.valueOf(str);
+					params.setPricePerRequest(flo);
+					break;
+				}catch(NumberFormatException e) {
+					System.out.println("It isn't a number. Input again:");
+				}
+			}
+		}
 		
-		System.out.println("Input the minimum amount of payment for your service, if you need. Input 'enter' to ignore:");
-		str = br.readLine();
-		if(!str.equals(""))params.setMinPayment(str);
+		System.out.println("Input the minimum amount of payment for your service, if you need. Press enter to ignore:");
+		flo = 0;
+		while(true) {
+			str = br.readLine();
+			if(!str.equals("")) {
+				try {
+					flo = Float.valueOf(str);
+					params.setMinPayment(flo);
+					break;
+				}catch(NumberFormatException e) {
+					System.out.println("It isn't a number. Input again:");
+				}
+			}
+		}
+		
+		System.out.println("Input the expiring days of sesson key of your service, if you need. Press enter to ignore:");
+		int num = 0;
+		while(true) {
+			str = br.readLine();
+			if(!str.equals("")) {
+				try {
+					num = Integer.valueOf(str);
+					params.setSessonDays(num);
+					break;
+				}catch(NumberFormatException e) {
+					System.out.println("It isn't a integer. Input again:");
+				}
+			}
+		}
+
 		
 		data.setParams(params);
-		
+		setting(params);
 		opReturn.setData(data);
 		
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -124,7 +189,7 @@ public class Operator {
 		System.out.println();
 	}
 	
-	private String[] inputStringArray(BufferedReader br, String ask) throws IOException {
+	private String[] inputStringArray(BufferedReader br, String ask, int len) throws IOException {
 		// TODO Auto-generated method stub
 		
 		System.out.println(ask);	
@@ -132,8 +197,14 @@ public class Operator {
 		while(true) {
 			String item = br.readLine();
 			if(item.equals(""))break;
+			if(len>0) {
+				if(item.length()!=len) {
+					System.out.println("The length does not match.");
+					continue;
+				}
+			}
 			itemList.add(item);
-			System.out.println("Input next item if you want or input 'enter' to end:");
+			System.out.println("Input next item if you want or enter to end:");
 		}
 		if(itemList.isEmpty())return new String [0];
 		
@@ -171,7 +242,7 @@ public class Operator {
 		data.setSid(sid);
 		
 		System.out.println("\nThe English name of your service: "+service.getStdName());	
-		System.out.println("Input the English name of your service if you want to change it, 'enter' to keep it:");	
+		System.out.println("Input the English name of your service if you want to change it, . Press enter to keep it:");	
 		String str = br.readLine();
 		if(!str.equals("")) {
 			data.setStdName(str);
@@ -187,8 +258,8 @@ public class Operator {
 		}else {
 			System.out.println("\nNo local names yet.");
 		}
-		String ask = "Input the local names of your service if you want to change it , 'enter' to keep it or 'd' to delete it:";
-		String[] localNames = inputStringArray(br,ask);
+		String ask = "Input the local names of your service if you want to change it . Press enter to keep it or 'd' to delete it:";
+		String[] localNames = inputStringArray(br,ask,0);
 		if(localNames.length!=0) {
 			data.setLocalNames(localNames);
 		}else {
@@ -202,7 +273,7 @@ public class Operator {
 		}else {
 			System.out.println("\nNo description yet.");
 		}
-		System.out.println("Input the description of your service if you want to change it , 'enter' to keep it or 'd' to delete it:");	
+		System.out.println("Input the description of your service if you want to change it . Press enter to keep it or 'd' to delete it:");	
 		str = br.readLine();
 		if(str.equals("d")) {
 			data.setDesc(null);
@@ -218,8 +289,8 @@ public class Operator {
 		}else {
 			System.out.println("\nNo URLs yet.");
 		}
-		ask = "Input the URLs of your service if you want to change it , 'enter' to keep it or 'd' to delete it:";
-		String[] urls = inputStringArray(br,ask);
+		ask = "Input the URLs of your service if you want to change it . Press enter to keep it or 'd' to delete it:";
+		String[] urls = inputStringArray(br,ask,0);
 		if(urls.length!=0) {
 			data.setUrls(urls);
 		}else {
@@ -232,16 +303,25 @@ public class Operator {
 		}else {
 			System.out.println("\nNo pubulic Key of the administrator yet.");
 		}
-		System.out.println("Input the pubulic Key of the administrator of your service if you want to change it , 'enter' to keep it or 'd' to delete it:");	
-		str = br.readLine();
-		if(str.equals("d")) {
-			data.setPubKeyAdmin(null);
-		}else if(!str.equals("")) {
-			data.setPubKeyAdmin(str);
-		}else {
-			data.setPubKeyAdmin(service.getPubKeyAdmin());
+		System.out.println("Input the pubulic Key of the administrator of your service if you want to change it . Press enter to keep it or 'd' to delete it:");	
+		
+		while(true) {
+			str = br.readLine();
+			if("".equals(str)) {
+				data.setPubKeyAdmin(service.getPubKeyAdmin());
+				break;
+			}else if(str.equals("d")) {
+				data.setPubKeyAdmin(null);
+				break;
+			}else if(Tools.Address.isValidPubKey(str)) {
+				data.setPubKeyAdmin(str);
+				break;
+			}else {
+				System.out.println("\nThis isn't a public key. Input again: ");
+				continue;
+			}
 		}
-
+		
 		if(service.getProtocols()!=null) {
 			System.out.println("\nThe PIDs of your service: ");	
 			for(String item:service.getProtocols()) {
@@ -250,8 +330,8 @@ public class Operator {
 		}else {
 			System.out.println("\nNo PIDs yet.");
 		}
-		ask = "Input the PIDs of your service if you want to change it , 'enter' to keep it or 'd' to delete it:";
-		String[] protocols = inputStringArray(br,ask);
+		ask = "Input the PIDs of your service if you want to change it . Press enter to keep it or 'd' to delete it:";
+		String[] protocols = inputStringArray(br,ask,64);
 		if(protocols.length!=0) {
 			data.setProtocols(protocols);
 		}else {
@@ -260,14 +340,13 @@ public class Operator {
 		}
 		
 		Params params = service.getParams();
-		Tools.ParseTools.gsonPrint(params);
 		
 		if(params.getUrlHead()!=null) {
 			System.out.println("\nThe head of the URL being requested for your service: "+params.getUrlHead());
 		}else {
 			System.out.println("\nNo head of the URL yet.");
 		}
-		System.out.println("Input the head of the URL being requested for your service if you want to change it , 'enter' to keep it or 'd' to delete it:");
+		System.out.println("Input the head of the URL being requested for your service if you want to change it . Press enter to keep it or 'd' to delete it:");
 		str = br.readLine();
 		if(str.equals("d")) {
 			params.setUrlHead(null);
@@ -275,14 +354,12 @@ public class Operator {
 			params.setUrlHead(str);
 		}
 		
-		Tools.ParseTools.gsonPrint(params);
-		
 		if(params.getCurrency()!=null) {
 			System.out.println("\nThe currency you acceptting for your service: "+params.getCurrency());	
 		}else {
 			System.out.println("\nNo currency yet.");
 		}
-		System.out.println("Input the currency you acceptting for your service if you want to change it , 'enter' to keep it or 'd' to delete it:");
+		System.out.println("Input the currency you acceptting for your service if you want to change it . Press enter to keep it or 'd' to delete it:");
 		str = br.readLine();
 		if(str.equals("d")) {
 			params.setCurrency(null);
@@ -295,7 +372,7 @@ public class Operator {
 		}else {
 			System.out.println("\nNo local names yet.");
 		}
-		System.out.println("Input the account to recieve payments if you want to change it , 'enter' to keep it or 'd' to delete it:");
+		System.out.println("Input the account to recieve payments if you want to change it . Press enter to keep it or 'd' to delete it:");
 		str = br.readLine();
 		if(str.equals("d")) {
 			params.setAccount(null);
@@ -303,41 +380,59 @@ public class Operator {
 			params.setAccount(str);
 		}
 		
-		if(params.getPricePerRequest()!=null) {
-			System.out.println("\nThe price per request of your service: "+params.getPricePerRequest());	
-		}else {
-			System.out.println("\nNo price per request yet.");
+		
+		System.out.println("\nThe price per request of your service: "+params.getPricePerRequest());	
+		System.out.println("Input the price per request of your service if you want to change it . Press enter to keep it:");
+		float flo = 0;
+		while(true) {
+			str = br.readLine();
+			if(!str.equals("")) {
+				try {
+					flo = Float.valueOf(str);
+					params.setPricePerRequest(flo);
+					break;
+				}catch(NumberFormatException e) {
+					System.out.println("It isn't a number. Input again:");
+				}
+			}
 		}
-		System.out.println("Input the price per request of your service if you want to change it , 'enter' to keep it or 'd' to delete it:");
-		str = br.readLine();
-		if(str.equals("d")) {
-			params.setPricePerRequest(null);
-		}else if(!str.equals("")) {
-			params.setPricePerRequest(str);
+
+		
+		System.out.println("\nThe minimum amount of payment for your service: "+params.getMinPayment());	
+		System.out.println("Input the minimum amount of payment for your service if you want to change it. Press enter to keep it:");
+		while(true) {
+			str = br.readLine();
+			if(!str.equals("")) {
+				try {
+					flo = Float.valueOf(str);
+					params.setMinPayment(flo);
+					break;
+				}catch(NumberFormatException e) {
+					System.out.println("It isn't a number. Input again:");
+				}
+			}
 		}
 		
-		if(params.getMinPayment()!=null) {
-			System.out.println("\nThe minimum amount of payment for your service: "+params.getMinPayment());	
-		}else {
-			System.out.println("\nNo minimum amount of payment yet.");
-		}
-		System.out.println("Input the minimum amount of payment for your service if you want to change it , 'enter' to keep it or 'd' to delete it:");
-		str = br.readLine();
-		if(str.equals("d")) {
-			params.setMinPayment(null);
-		}else if(!str.equals("")) {
-			params.setMinPayment(str);
+		System.out.println("\nThe expiring days of the sesson key of your service: "+params.getSessonDays());	
+		System.out.println("Input the minimum amount of payment for your service if you want to change it. Press enter to keep it:");
+		while(true) {
+			str = br.readLine();
+			if(!str.equals("")) {
+				try {
+					int num = Integer.valueOf(str);
+					params.setSessonDays(num);
+					break;
+				}catch(NumberFormatException e) {
+					System.out.println("It isn't a integer. Input again:");
+				}
+			}
 		}
 		
-		Tools.ParseTools.gsonPrint(params);
-		
+		setting(params);
+				
 		data.setParams(params);
-		
-		Tools.ParseTools.gsonPrint(data);
-		
+			
 		opReturn.setData(data);
-		
-		Tools.ParseTools.gsonPrint(opReturn);
 		
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 

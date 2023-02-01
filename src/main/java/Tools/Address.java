@@ -8,6 +8,17 @@ import io.github.novacrypto.base58.Base58;
 
 public class Address {
 	
+	public static boolean isValidPubKey(String puk) {
+		// TODO Auto-generated method stub
+		String prefix = "";
+		if(puk.length()>2)prefix = puk.substring(0, 2);
+		if(puk.length()==66) {
+			if(prefix.equals("02")||prefix.equals("03")) return true;
+		}else if(puk.length()==130) {
+			if(prefix.equals("04")) return true;
+		}
+		return false;
+	}
 	
 	public static boolean isValidFchAddr(String addr) {
 		// TODO Auto-generated method stub

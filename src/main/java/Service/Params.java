@@ -5,8 +5,9 @@ public class Params {
 	private String urlHead;
 	private String currency;
 	private String account;
-	private String pricePerRequest;
-	private String minPayment;
+	private float pricePerRequest;
+	private float minPayment;
+	private int sessonDays;
 	
 	public String getUrlHead() {
 		return urlHead;
@@ -26,16 +27,24 @@ public class Params {
 	public void setAccount(String account) {
 		this.account = account;
 	}
-	public String getPricePerRequest() {
+	public float getPricePerRequest() {
 		return pricePerRequest;
 	}
-	public void setPricePerRequest(String pricePerRequest) {
+	public void setPricePerRequest(float pricePerRequest) {
 		this.pricePerRequest = pricePerRequest;
 	}
-	public String getMinPayment() {
+	public float getMinPayment() {
 		return minPayment;
 	}
-	public void setMinPayment(String minPayment) {
+	public void setMinPayment(float minPayment) {
 		this.minPayment = minPayment;
 	}
+	public int getSessonDays() {
+		return sessonDays;
+	}
+	public void setSessonDays(int sessonDays) {
+		this.sessonDays = sessonDays;
+	}
+	
+	
 }

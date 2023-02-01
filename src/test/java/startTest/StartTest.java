@@ -6,24 +6,24 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import Finance.Finance;
-import Service.Operator;
-import Users.Users;
+import Service.Managing;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import esClient.StartClient;
+import redis.clients.jedis.Jedis;
 import start.Configer;
-import startTest.RunService;
 
 
 public class StartTest {
 	
-	private static int MenuItemsNum =7;
 	private static final Logger log = LoggerFactory.getLogger(StartTest.class);
 	private static StartClient startClient = new StartClient();
 	
@@ -45,13 +45,12 @@ public class StartTest {
 					+"	1 Create a Java HTTP Client\n"
 					+"	2 Create a Java HTTPS Client\n"
 					+"	3 Manage Service\n"
-					+"	4 Manage Finance\n"
-					+"	5 Manage Users\n"
-					+"	6 Run Service\n"
+					+"	4 Find Users\n"
+					+"	5 Run Service\n"
 					+"	0 exit"
 					);	
 			
-			int choice = choose(sc);
+			int choice = choose(sc,5);
 
 			switch(choice) {
 			case 1: //Create HTTP client
@@ -99,35 +98,20 @@ public class StartTest {
 					System.out.println("Create a Java client for ES first.");
 					break;
 				}
-				Operator operator= new Operator();
+				Managing serviceManager= new Managing();
 				
-				operator.menu(esClient, sc, br);
-				
-				break;
-				
-			case 4: //Manage finance
-				if(esClient==null) {
-					System.out.println("Create a Java client for ES first.");
-					break;
-				}
-
-				Finance finance = new Finance();
-				
-				finance.menu(sc);
-				
-				break;
-			case 5: //Manage users
-				if(esClient==null) {
-					System.out.println("Create a Java client for ES first.");
-					break;
-				}
-				Users users = new Users();
-				
-				users.menu(sc);
+				serviceManager.menu(esClient, sc, br);
 				
 				break;
 				
-			case 6: //Run service
+			case 4: //Find users
+				
+				
+				findUsers(br);
+				
+				break;
+				
+			case 5: //Run service
 				if(esClient==null) {
 					System.out.println("Create a Java client for ES first.");
 					break;
@@ -160,7 +144,7 @@ public class StartTest {
 		br.close();
 	}
 	
-	public static int choose(Scanner sc) throws IOException {
+	public static int choose(Scanner sc, int itemNum) throws IOException {
 		System.out.println("\nInput the number you want to do:\n");
 		int choice = 0;
 		while(true) {
@@ -169,7 +153,7 @@ public class StartTest {
 				sc.next();
 			}
 			choice = sc.nextInt();
-		if(choice <= MenuItemsNum && choice>=0)break;
+		if(choice <= itemNum && choice>=0)break;
 		System.out.println("\nInput one of the integers shown above.");
 		}
 		return choice;
@@ -207,6 +191,46 @@ public class StartTest {
 		}
 		
 		return esClient;
+	}
+	
+	private static void findUsers(BufferedReader br) throws IOException {
+		// TODO Auto-generated method stub
+		System.out.println("Input user id or a part of it. Press enter to list all:");
+		String str = br.readLine();
+		Jedis jedis = new Jedis();
+		Set<String> result = new HashSet<String> ();
+		if("".equals(str)) {
+			result =  jedis.keys("*");
+			if(result.size()!=0) {
+				for(String id:result) {
+					String type = jedis.type(id);
+					switch(type) {
+					case "hash":
+						Map<String, String> user = jedis.hgetAll(id);
+						System.out.println(id+": " + user.toString());
+						break;
+					default:
+						break;
+					}
+				}
+			}else {
+				System.out.println("No item found.");
+			}
+			jedis.close();
+			return;
+		}else {
+			result =  jedis.keys("*"+str+"*");
+			if(result.size()!=0) {
+				for(String id:result) {
+					Map<String, String> user = jedis.hgetAll(id);
+					System.out.println(id+": " + user.toString());
+				}
+			}else {
+				System.out.println("No item found.");
+			}
+			jedis.close();
+			return;
+		}
 	}
 
 }
