@@ -13,7 +13,10 @@ public class Configer {
 	private String ip;
 	private int port;
 	private String username;
-	private String path;
+	private String opReturnJsonPath;
+	private String tomcatStartCommand;
+	private int redisPost;
+	private String redisHost;
 	
 	public void initial() throws IOException {
 
@@ -36,26 +39,41 @@ public class Configer {
 			
 			ip = config.getIp();
 			port = config.getPort();
-			path = config.getPath();
+			opReturnJsonPath = config.getOpReturnJsonPath();
 			username = config.getUsername();
+			tomcatStartCommand = config.getTomcatStartCommand();
+			redisPost = config.getRedisPost();
+			redisHost = config.getRedisHost();
 			
 			fis.close();
 		}
 		return;
 	}
 
-	public void configHttp(Scanner sc, BufferedReader br) throws IOException {
-		config(sc, br,false) ;
+	public void configHttp(Configer configer, Scanner sc, BufferedReader br) throws IOException {
+		config(configer,sc, br,false) ;
 	}
-	public void configHttps(Scanner sc, BufferedReader br) throws IOException {
-		config(sc, br,true) ;
+	public void configHttps(Configer configer, Scanner sc, BufferedReader br) throws IOException {
+		config(configer,sc, br,true) ;
 	}
-	public void config(Scanner sc, BufferedReader br,boolean isHttps) throws IOException {
-		
-		Configer configer = new Configer();
+	public void config(Configer configer, Scanner sc, BufferedReader br,boolean isHttps) throws IOException {
 		
 		Gson gson = new Gson();
 		File configFile = new File("config.json");
+		
+		if(configFile.exists()) {
+			FileInputStream fis = new FileInputStream(configFile);
+			byte[] configJsonBytes = new byte[fis.available()];
+			fis.read(configJsonBytes);
+			
+			String configJson = new String(configJsonBytes);
+			configer = gson.fromJson(configJson, Configer.class);
+			
+			if(configer==null) {
+				configer = new Configer();
+			}
+			fis.close();
+		}
 		
 		FileOutputStream fos = new FileOutputStream(configFile);
 		
@@ -72,13 +90,12 @@ public class Configer {
 		while(true){
 			if(!sc.hasNextInt()) {
 				System.out.println("It must be a port. It's a integer between 0 and 655350. Input again.\"");
-				configer.setPort(sc.nextInt());
+				sc.nextInt();
 			}
 			else {
 				configer.setPort(sc.nextInt());
 				if( configer.getPort()>0 && configer.getPort()<65535)break;
 				System.out.println("It has to be between 0 and 655350. Input again.");
-				configer.setPort(sc.nextInt());
 			}
 		}
 		
@@ -91,15 +108,15 @@ public class Configer {
 		
 		while(true) {
 			System.out.println("Input the path of opreturn*.byte file ending with '/':");
-			configer.setPath(br.readLine());
-	        file = new File(configer.getPath());
+			configer.setOpReturnJsonPath(br.readLine());
+	        file = new File(configer.getOpReturnJsonPath());
 	        if (!file.exists()) {
 	        	System.out.println("\nPath doesn't exist.");
 	        }else break;
-	        break;
 		}
 		
 		fos.write(gson.toJson(configer).getBytes());
+		fos.flush();
 		fos.close();
 		
 		System.out.println("\nConfiged.");	
@@ -132,11 +149,35 @@ public class Configer {
 		this.username = username;
 	}
 
-	public String getPath() {
-		return path;
+	public String getOpReturnJsonPath() {
+		return opReturnJsonPath;
 	}
 
-	public void setPath(String path) {
-		this.path = path;
+	public void setOpReturnJsonPath(String path) {
+		this.opReturnJsonPath = path;
+	}
+
+	public String getTomcatStartCommand() {
+		return tomcatStartCommand;
+	}
+
+	public void setTomcatStartCommand(String tomcatPath) {
+		this.tomcatStartCommand = tomcatPath;
+	}
+
+	public String getRedisHost() {
+		return redisHost;
+	}
+
+	public void setRedisHost(String redisHost) {
+		this.redisHost = redisHost;
+	}
+
+	public int getRedisPost() {
+		return redisPost;
+	}
+
+	public void setRedisPost(int redisPost) {
+		this.redisPost = redisPost;
 	}
 }

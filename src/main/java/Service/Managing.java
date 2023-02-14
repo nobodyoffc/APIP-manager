@@ -13,12 +13,14 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import redis.clients.jedis.Jedis;
-import start.Indices;
 import start.Start;
+
 
 public class Managing {
 	
-	public void menu(ElasticsearchClient esClient, Scanner sc,BufferedReader br) throws IOException {
+	private static final String ServiceIndex = "service";
+
+	public void menu(ElasticsearchClient esClient, Scanner sc,BufferedReader br, Jedis jedis) throws IOException {
 		
 		System.out.println(
 				" Choice the operator: \n"	
@@ -34,10 +36,10 @@ public class Managing {
 
 		switch(choice) {
 		case 1:
-			publish(br);
+			publish(br, jedis);
 			break;
 		case 2:
-			update(esClient,br);
+			update(esClient,br, jedis);
 			break;
 		case 3:
 			stop(esClient, br);
@@ -58,22 +60,23 @@ public class Managing {
 
 	}
 
-	private void setting(Params params) {
+	private void setting(Params params, Jedis jedis) {
 		// TODO Auto-generated method stub
-		Jedis jedis = new Jedis();
+
 		HashMap<String,String> paramsMap = new HashMap<String,String>();
-		paramsMap.put("urlHead", params.getUrlHead());
-		paramsMap.put("currency", params.getCurrency());
-		paramsMap.put("account", params.getAccount());
-		paramsMap.put("pricePerRequest", String.valueOf(params.getPricePerRequest()));
-		paramsMap.put("minPayment", String.valueOf(params.getMinPayment()));
-		paramsMap.put("sessonDays", String.valueOf(params.getSessonDays()));
+		if(params.getUrlHead()!=null)paramsMap.put("urlHead", params.getUrlHead());
+		if(params.getCurrency()!=null)paramsMap.put("currency", params.getCurrency());
+		if(params.getAccount()!=null)paramsMap.put("account", params.getAccount());
+		if(params.getPricePerRequest()!=0)paramsMap.put("pricePerRequest", String.valueOf(params.getPricePerRequest()));
+		if(params.getMinPayment()!=0)paramsMap.put("minPayment", String.valueOf(params.getMinPayment()));
+		if(params.getSessonDays()!=0)paramsMap.put("sessonDays", String.valueOf(params.getSessonDays()));
 		
-		jedis.hmset("params", paramsMap);
-		jedis.close();
+		if(paramsMap.size()!=0) {
+			jedis.hmset("params", paramsMap);
+		}
 	}
 
-	private void publish(BufferedReader br) throws IOException {
+	private void publish(BufferedReader br, Jedis jedis) throws IOException {
 		System.out.println("To publish a new service.");
 		
 		OpReturn opReturn = new OpReturn();
@@ -136,50 +139,50 @@ public class Managing {
 		float flo = 0;
 		while(true) {
 			str = br.readLine();
-			if(!str.equals("")) {
+			if(!("".equals(str))) {
 				try {
 					flo = Float.valueOf(str);
 					params.setPricePerRequest(flo);
 					break;
-				}catch(NumberFormatException e) {
+				}catch(Exception e) {
 					System.out.println("It isn't a number. Input again:");
 				}
-			}
+			}else break;
 		}
 		
 		System.out.println("Input the minimum amount of payment for your service, if you need. Press enter to ignore:");
 		flo = 0;
 		while(true) {
 			str = br.readLine();
-			if(!str.equals("")) {
+			if(!("".equals(str))) {
 				try {
 					flo = Float.valueOf(str);
 					params.setMinPayment(flo);
 					break;
-				}catch(NumberFormatException e) {
+				}catch(Exception e) {
 					System.out.println("It isn't a number. Input again:");
 				}
-			}
+			}else break;
 		}
 		
 		System.out.println("Input the expiring days of sesson key of your service, if you need. Press enter to ignore:");
-		int num = 0;
+		Integer num = 0;
 		while(true) {
 			str = br.readLine();
-			if(!str.equals("")) {
+			if(!("".equals(str))) {
 				try {
 					num = Integer.valueOf(str);
 					params.setSessonDays(num);
 					break;
-				}catch(NumberFormatException e) {
+				}catch(Exception e) {
 					System.out.println("It isn't a integer. Input again:");
 				}
-			}
+			}else break;
 		}
 
 		
 		data.setParams(params);
-		setting(params);
+		setting(params, jedis);
 		opReturn.setData(data);
 		
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -213,7 +216,7 @@ public class Managing {
 		return items;
 	}
 	
-	private void update(ElasticsearchClient esClient, BufferedReader br) throws IOException {
+	private void update(ElasticsearchClient esClient, BufferedReader br, Jedis jedis) throws IOException {
 		System.out.println("To update the service information.");
 		
 		System.out.println("Input the SID of your service:");	
@@ -226,7 +229,7 @@ public class Managing {
 			System.out.println("Illegal sid. Input again:");
 		}
 		String id = sid;
-		GetResponse<Service> result = esClient.get(g->g.index(Indices.ServiceIndex).id(id), Service.class);
+		GetResponse<Service> result = esClient.get(g->g.index(ServiceIndex).id(id), Service.class);
 		
 		if(!result.found()) {
 			System.out.println("Service does not exist.");	
@@ -386,7 +389,7 @@ public class Managing {
 		float flo = 0;
 		while(true) {
 			str = br.readLine();
-			if(!str.equals("")) {
+			if(!"".equals(str)) {
 				try {
 					flo = Float.valueOf(str);
 					params.setPricePerRequest(flo);
@@ -402,7 +405,7 @@ public class Managing {
 		System.out.println("Input the minimum amount of payment for your service if you want to change it. Press enter to keep it:");
 		while(true) {
 			str = br.readLine();
-			if(!str.equals("")) {
+			if(!"".equals(str)) {
 				try {
 					flo = Float.valueOf(str);
 					params.setMinPayment(flo);
@@ -417,9 +420,9 @@ public class Managing {
 		System.out.println("Input the minimum amount of payment for your service if you want to change it. Press enter to keep it:");
 		while(true) {
 			str = br.readLine();
-			if(!str.equals("")) {
+			if(!"".equals(str)) {
 				try {
-					int num = Integer.valueOf(str);
+					Integer num = Integer.valueOf(str);
 					params.setSessonDays(num);
 					break;
 				}catch(NumberFormatException e) {
@@ -428,7 +431,7 @@ public class Managing {
 			}
 		}
 		
-		setting(params);
+		setting(params, jedis);
 				
 		data.setParams(params);
 			
@@ -447,7 +450,7 @@ public class Managing {
 		System.out.println("Input the SID of your service:");	
 		String sid = br.readLine();
 		
-		GetResponse<Service> result = esClient.get(g->g.index(Indices.ServiceIndex).id(sid), Service.class);
+		GetResponse<Service> result = esClient.get(g->g.index(ServiceIndex).id(sid), Service.class);
 		
 		if(!result.found()) {
 			System.out.println("Service does not exist.");	
@@ -476,7 +479,7 @@ public class Managing {
 		System.out.println("Input the SID of your service:");	
 		String sid = br.readLine();
 		
-		GetResponse<Service> result = esClient.get(g->g.index(Indices.ServiceIndex).id(sid), Service.class);
+		GetResponse<Service> result = esClient.get(g->g.index(ServiceIndex).id(sid), Service.class);
 		
 		if(!result.found()) {
 			System.out.println("Service does not exist.");	
@@ -505,7 +508,7 @@ public class Managing {
 		System.out.println("Input the SID of your service:");	
 		String sid = br.readLine();
 		
-		GetResponse<Service> result = esClient.get(g->g.index(Indices.ServiceIndex).id(sid), Service.class);
+		GetResponse<Service> result = esClient.get(g->g.index(ServiceIndex).id(sid), Service.class);
 		
 		if(!result.found()) {
 			System.out.println("Service does not exist.");	

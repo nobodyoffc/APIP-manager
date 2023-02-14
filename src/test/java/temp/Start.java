@@ -1,5 +1,4 @@
-package startTest;
-
+package temp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,9 +21,9 @@ import redis.clients.jedis.Jedis;
 import start.Configer;
 
 
-public class StartTest {
+public class Start {
 	
-	private static final Logger log = LoggerFactory.getLogger(StartTest.class);
+	private static final Logger log = LoggerFactory.getLogger(Start.class);
 	private static StartClient startClient = new StartClient();
 	
 	public static void main(String[] args)throws Exception{
@@ -54,8 +53,8 @@ public class StartTest {
 
 			switch(choice) {
 			case 1: //Create HTTP client
-				if(configer.getIp()==null || configer.getPort() == 0 || configer.getPath()==null) {
-					configer.configHttp(sc,br);
+				if(configer.getIp()==null || configer.getPort() == 0 || configer.getOpReturnJsonPath()==null) {
+					configer.configHttp(configer, sc,br);
 					configer.initial();
 				}
 				
@@ -74,8 +73,8 @@ public class StartTest {
 				}
 				break;
 			case 2: //Create HTTPS client
-				if(configer.getIp()==null || configer.getPort() == 0|| configer.getUsername()==null|| configer.getPath()==null) {
-					configer.configHttps(sc,br);
+				if(configer.getIp()==null || configer.getPort() == 0|| configer.getUsername()==null|| configer.getOpReturnJsonPath()==null) {
+					configer.configHttps(configer, sc,br);
 					configer.initial();
 				}
 				
@@ -100,7 +99,7 @@ public class StartTest {
 				}
 				Managing serviceManager= new Managing();
 				
-				serviceManager.menu(esClient, sc, br);
+				serviceManager.menu(esClient, sc, br, null);
 				
 				break;
 				
@@ -122,10 +121,7 @@ public class StartTest {
 					break;
 				}
 				
-				Runnable runService = new RunService();
-				
-				Thread serveThread = new Thread(runService);
-				serveThread.start();
+
 				isRunning = true;
 				
 				break;
@@ -144,7 +140,7 @@ public class StartTest {
 		br.close();
 	}
 	
-	public static int choose(Scanner sc, int itemNum) throws IOException {
+	public static int choose(Scanner sc,int num) throws IOException {
 		System.out.println("\nInput the number you want to do:\n");
 		int choice = 0;
 		while(true) {
@@ -153,7 +149,7 @@ public class StartTest {
 				sc.next();
 			}
 			choice = sc.nextInt();
-		if(choice <= itemNum && choice>=0)break;
+		if(choice <= num && choice>=0)break;
 		System.out.println("\nInput one of the integers shown above.");
 		}
 		return choice;
@@ -203,15 +199,8 @@ public class StartTest {
 			result =  jedis.keys("*");
 			if(result.size()!=0) {
 				for(String id:result) {
-					String type = jedis.type(id);
-					switch(type) {
-					case "hash":
-						Map<String, String> user = jedis.hgetAll(id);
-						System.out.println(id+": " + user.toString());
-						break;
-					default:
-						break;
-					}
+					Map<String, String> user = jedis.hgetAll(id);
+					System.out.println(id+": " + user.toString());
 				}
 			}else {
 				System.out.println("No item found.");
