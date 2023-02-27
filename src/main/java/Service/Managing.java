@@ -3,9 +3,11 @@ package Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -23,57 +25,99 @@ public class Managing {
 	public void menu(ElasticsearchClient esClient, Scanner sc,BufferedReader br, Jedis jedis) throws IOException {
 		
 		System.out.println(
-				" Choice the operator: \n"	
-				+"	1 Publish New Service\n"
-				+"	2 Update Existed Service\n"
-				+"	3 Stop Existed Service\n"
-				+"	4 Recover Stoped Service\n"
-				+"	5 Close Service Permanently\n"
-				+"	0 Return"
+				"	-----------------------------\n"
+				+"	Choose\n"
+				+"	-----------------------------\n"
+				+"	1 Find your service\n"
+				+"	2 Publish New Service\n"
+				+"	3 Update Existed Service\n"
+				+"	4 Reload service to redis\n"
+				+"	5 Stop Existed Service\n"
+				+"	6 Recover Stoped Service\n"
+				+"	7 Close Service Permanently\n"
+				+"	0 Return\n"
+				+"	-----------------------------"
 				);	
 		
 		int choice = Start.choose(sc, 5);
 
 		switch(choice) {
-		case 1:
-			publish(br, jedis);
-			break;
-		case 2:
-			update(esClient,br, jedis);
-			break;
-		case 3:
-			stop(esClient, br);
-			break;
-		case 4:
-			recover(esClient, br);
-			break;
-		case 5:
-			System.out.println("Do you really want to give up the service forever? y or n:");			
-			String delete = sc.next();		
-			if (delete.equals("y")) {
-				close(esClient, br);
-			}
-			break;
-		case 0:
-			return;
+			case 1:
+				getService(jedis,esClient,sc,br);
+				break;
+			case 2:
+				publish(br, jedis);
+				break;
+			case 3:
+				update(esClient,br, jedis);
+				break;
+			case 4:
+				reloadService(esClient,jedis);
+			case 5:
+				stop(esClient, br);
+				break;
+			case 6:
+				recover(esClient, br);
+				break;
+			case 7:
+				System.out.println("Do you really want to give up the service forever? y or n:");
+				String delete = sc.next();
+				if (delete.equals("y")) {
+					close(esClient, br);
+				}
+				break;
+			case 0:
+				return;
 		}
 
 	}
 
-	private void setting(Params params, Jedis jedis) {
-		// TODO Auto-generated method stub
+	private void reloadService(ElasticsearchClient esClient, Jedis jedis) throws IOException {
+		Service service = new Gson().fromJson(jedis.get("service"), Service.class);
+		Service finalService = service;
+		GetResponse<Service> r = esClient.get(g -> g.index("service").id(finalService.getSid()), Service.class);
+		String serviceJson = new Gson().toJson(r.source());
+		jedis.set("service",serviceJson);
+	}
 
-		HashMap<String,String> paramsMap = new HashMap<String,String>();
-		if(params.getUrlHead()!=null)paramsMap.put("urlHead", params.getUrlHead());
-		if(params.getCurrency()!=null)paramsMap.put("currency", params.getCurrency());
-		if(params.getAccount()!=null)paramsMap.put("account", params.getAccount());
-		if(params.getPricePerRequest()!=0)paramsMap.put("pricePerRequest", String.valueOf(params.getPricePerRequest()));
-		if(params.getMinPayment()!=0)paramsMap.put("minPayment", String.valueOf(params.getMinPayment()));
-		if(params.getSessonDays()!=0)paramsMap.put("sessonDays", String.valueOf(params.getSessonDays()));
-		
-		if(paramsMap.size()!=0) {
-			jedis.hmset("params", paramsMap);
-		}
+	private Service getService(Jedis jedis, ElasticsearchClient esClient, Scanner sc, BufferedReader br) throws IOException {
+		Gson gson = new Gson();
+
+        System.out.println("Input the fch address of the owner:");
+        String str = br.readLine();
+        if(str.equals(""))return null;
+        SearchResponse<Service> result = esClient.search(s -> s.index(ServiceIndex).query(q -> q.term(t -> t.field("owner").value(str))), Service.class);
+        List<Hit<Service>> hitList = result.hits().hits();
+        ArrayList<Service> serviceList = new ArrayList<Service>();
+        for(Hit<Service> hit:hitList){
+			Service s = hit.source();
+			if(s.isClosed())continue;
+            serviceList.add(s);
+        }
+        int size = serviceList.size();
+        if(serviceList ==null || size==0){
+            System.out.println("No service found under this owner.");
+            return null;
+        }
+        Service service = new Service();
+        for(int i = 0;i<size;i++){
+            service = serviceList.get(i);
+            System.out.println((i+1) +". service name: "+ service.getStdName()+"sid: "+service.getSid());
+        }
+        if(size==1){
+            jedis.set("service",gson.toJson(service));
+            System.out.println("Service has been wrote into redis. Press enter to continue...");
+            br.readLine();
+            return service;
+        }
+
+        int choice = Start.choose(sc, size);
+        service= serviceList.get(choice-1);
+        System.out.println(choice +". service name: "+ service.getStdName()+"sid: "+service.getSid());
+        jedis.set("service",gson.toJson(service));
+        System.out.println("Service has been wrote into redis. Press enter to continue...");
+        br.readLine();
+        return service;
 	}
 
 	private void publish(BufferedReader br, Jedis jedis) throws IOException {
@@ -84,10 +128,12 @@ public class Managing {
 		Data data = new Data();
 		
 		Params params = new Params();
+
+		Service service = new Service();
 		
 		data.setOp("publish");
 		
-		System.out.println("Input the English name of your service:");	
+		System.out.println("Input the English name of your service:");
 		data.setStdName(br.readLine());
 		
 		String ask = "Input the local names of your service, if you want. Press enter to end :";
@@ -119,7 +165,7 @@ public class Managing {
 			}
 		}
 		
-		ask = "Input the PIDs of the PIDs your service using, if you want. Press enter to end :";
+		ask = "Input the PIDs of the PIDs your service using if you want. Press enter to end :";
 		String[] protocols = inputStringArray(br,ask,64);
 		if(protocols.length!=0)data.setProtocols(protocols);
 		
@@ -131,11 +177,11 @@ public class Managing {
 		str = br.readLine();
 		if(!str.equals(""))params.setCurrency(str);
 		
-		System.out.println("Input the account to recieve payments, if you need. Press enter to ignore:");
+		System.out.println("Input the account to recieve payments if you need. Press enter to ignore:");
 		str = br.readLine();
 		if(!str.equals(""))params.setAccount(str);
 
-		System.out.println("Input the price per request of your service, if you need. Press enter to ignore:");
+		System.out.println("Input the price per request of your service if you need. Press enter to ignore:");
 		float flo = 0;
 		while(true) {
 			str = br.readLine();
@@ -172,7 +218,7 @@ public class Managing {
 			if(!("".equals(str))) {
 				try {
 					num = Integer.valueOf(str);
-					params.setSessonDays(num);
+					params.setSessionDays(num);
 					break;
 				}catch(Exception e) {
 					System.out.println("It isn't a integer. Input again:");
@@ -182,7 +228,6 @@ public class Managing {
 
 		
 		data.setParams(params);
-		setting(params, jedis);
 		opReturn.setData(data);
 		
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -302,11 +347,11 @@ public class Managing {
 		}
 		
 		if(service.getPubKeyAdmin()!=null) {
-			System.out.println("\nThe pubulic Key of the administrator of your service: "+service.getPubKeyAdmin());	
+			System.out.println("\nThe public Key of the administrator of your service: "+service.getPubKeyAdmin());
 		}else {
-			System.out.println("\nNo pubulic Key of the administrator yet.");
+			System.out.println("\nNo public Key of the administrator yet.");
 		}
-		System.out.println("Input the pubulic Key of the administrator of your service if you want to change it . Press enter to keep it or 'd' to delete it:");	
+		System.out.println("Input the public Key of the administrator of your service if you want to change it . Press enter to keep it or 'd' to delete it:");
 		
 		while(true) {
 			str = br.readLine();
@@ -358,11 +403,11 @@ public class Managing {
 		}
 		
 		if(params.getCurrency()!=null) {
-			System.out.println("\nThe currency you acceptting for your service: "+params.getCurrency());	
+			System.out.println("\nThe currency you accepting for your service: "+params.getCurrency());
 		}else {
 			System.out.println("\nNo currency yet.");
 		}
-		System.out.println("Input the currency you acceptting for your service if you want to change it . Press enter to keep it or 'd' to delete it:");
+		System.out.println("Input the currency you accepting for your service if you want to change it . Press enter to keep it or 'd' to delete it:");
 		str = br.readLine();
 		if(str.equals("d")) {
 			params.setCurrency(null);
@@ -371,11 +416,11 @@ public class Managing {
 		}
 		
 		if(params.getAccount()!=null) {
-			System.out.println("\nThe account to recieve payments: "+params.getAccount());	
+			System.out.println("\nThe account to receive payments: "+params.getAccount());
 		}else {
 			System.out.println("\nNo local names yet.");
 		}
-		System.out.println("Input the account to recieve payments if you want to change it . Press enter to keep it or 'd' to delete it:");
+		System.out.println("Input the account to receive payments if you want to change it . Press enter to keep it or 'd' to delete it:");
 		str = br.readLine();
 		if(str.equals("d")) {
 			params.setAccount(null);
@@ -416,23 +461,20 @@ public class Managing {
 			}
 		}
 		
-		System.out.println("\nThe expiring days of the sesson key of your service: "+params.getSessonDays());	
+		System.out.println("\nThe expiring days of the session key of your service: "+params.getSessionDays());
 		System.out.println("Input the minimum amount of payment for your service if you want to change it. Press enter to keep it:");
 		while(true) {
 			str = br.readLine();
 			if(!"".equals(str)) {
 				try {
 					Integer num = Integer.valueOf(str);
-					params.setSessonDays(num);
+					params.setSessionDays(num);
 					break;
 				}catch(NumberFormatException e) {
 					System.out.println("It isn't a integer. Input again:");
 				}
 			}
 		}
-		
-		setting(params, jedis);
-				
 		data.setParams(params);
 			
 		opReturn.setData(data);

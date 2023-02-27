@@ -1,7 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  
   <modelVersion>4.0.0</modelVersion>
   <groupId>fc</groupId>
-  <artifactId>No1_NrC7</artifactId>
+  <artifactId>APIP-manager</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>APIP</name>
   <description>Open APIs of  FreeConsensus</description>
@@ -100,7 +101,12 @@
 		    <artifactId>jedis</artifactId>
 		    <version>4.4.0-m1</version>
 		</dependency>
-		
-	</dependencies>
+
+		<dependency>
+			<groupId>fc</groupId>
+			<artifactId>FEIP-parser</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+  </dependencies>
   
 </project>

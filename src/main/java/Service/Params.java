@@ -7,7 +7,7 @@ public class Params {
 	private String account;
 	private float pricePerRequest;
 	private float minPayment;
-	private int sessonDays;
+	private int sessionDays;
 	
 	public String getUrlHead() {
 		return urlHead;
@@ -39,11 +39,11 @@ public class Params {
 	public void setMinPayment(float minPayment) {
 		this.minPayment = minPayment;
 	}
-	public int getSessonDays() {
-		return sessonDays;
+	public int getSessionDays() {
+		return sessionDays;
 	}
-	public void setSessonDays(int sessonDays) {
-		this.sessonDays = sessonDays;
+	public void setSessionDays(int sessionDays) {
+		this.sessionDays = sessionDays;
 	}
 	
 	
