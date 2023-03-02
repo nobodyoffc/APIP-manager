@@ -1,4 +1,4 @@
-package Service;
+package service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,6 +16,7 @@ import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import redis.clients.jedis.Jedis;
 import start.Start;
+import tools.Address;
 
 
 public class Managing {
@@ -156,7 +157,7 @@ public class Managing {
 			str = br.readLine();
 			if("".equals(str)) {
 				break;
-			}else if(Tools.Address.isValidPubKey(str)) {
+			}else if(Address.isValidPubKey(str)) {
 					data.setPubKeyAdmin(str);
 					break;
 			}else {
@@ -361,7 +362,7 @@ public class Managing {
 			}else if(str.equals("d")) {
 				data.setPubKeyAdmin(null);
 				break;
-			}else if(Tools.Address.isValidPubKey(str)) {
+			}else if(Address.isValidPubKey(str)) {
 				data.setPubKeyAdmin(str);
 				break;
 			}else {

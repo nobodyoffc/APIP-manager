@@ -1,12 +1,11 @@
 package Test;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import Service.Service;
+import service.Service;
 import redis.clients.jedis.Jedis;
 
 public class Test {

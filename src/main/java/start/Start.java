@@ -14,7 +14,7 @@ import co.elastic.clients.elasticsearch.indices.DeleteIndexResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import Service.Managing;
+import service.Managing;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import esClient.StartClient;
 import redis.clients.jedis.Jedis;
