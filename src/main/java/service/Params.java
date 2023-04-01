@@ -5,10 +5,19 @@ public class Params {
 	private String urlHead;
 	private String currency;
 	private String account;
-	private float pricePerRequest;
-	private float minPayment;
+	private String pricePerKBytes;
+	private String pricePerRequest;
+	private String minPayment;
 	private int sessionDays;
-	
+
+	public String getPricePerKBytes() {
+		return pricePerKBytes;
+	}
+
+	public void setPricePerKBytes(String pricePerKBytes) {
+		this.pricePerKBytes = pricePerKBytes;
+	}
+
 	public String getUrlHead() {
 		return urlHead;
 	}
@@ -27,16 +36,16 @@ public class Params {
 	public void setAccount(String account) {
 		this.account = account;
 	}
-	public float getPricePerRequest() {
+	public String getPricePerRequest() {
 		return pricePerRequest;
 	}
-	public void setPricePerRequest(float pricePerRequest) {
+	public void setPricePerRequest(String pricePerRequest) {
 		this.pricePerRequest = pricePerRequest;
 	}
-	public float getMinPayment() {
+	public String getMinPayment() {
 		return minPayment;
 	}
-	public void setMinPayment(float minPayment) {
+	public void setMinPayment(String minPayment) {
 		this.minPayment = minPayment;
 	}
 	public int getSessionDays() {

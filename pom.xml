@@ -107,6 +107,28 @@
 			<artifactId>FEIP-parser</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+	  <dependency>
+		  <groupId>fc.nobody</groupId>
+		  <artifactId>fchChain</artifactId>
+		  <version>0.0.1-SNAPSHOT</version>
+		  <scope>compile</scope>
+	  </dependency>
+
+	  <!-- https://mvnrepository.com/artifact/net.coobird/thumbnailator -->
+	  <dependency>
+		  <groupId>net.coobird</groupId>
+		  <artifactId>thumbnailator</artifactId>
+		  <version>0.4.19</version>
+	  </dependency>
+
+	  <!-- https://mvnrepository.com/artifact/org.springframework/org.springframework.web -->
+	  <dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>org.springframework.web</artifactId>
+		  <version>3.1.0.RELEASE</version>
+	  </dependency>
+
+
   </dependencies>
   
 </project>

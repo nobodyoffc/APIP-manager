@@ -15,8 +15,9 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import redis.clients.jedis.Jedis;
-import start.Start;
-import tools.Address;
+import fcTools.KeyTools;
+
+import static startApipManager.Start.choose;
 
 
 public class Managing {
@@ -34,13 +35,13 @@ public class Managing {
 				+"	3 Update Existed Service\n"
 				+"	4 Reload service to redis\n"
 				+"	5 Stop Existed Service\n"
-				+"	6 Recover Stoped Service\n"
+				+"	6 Recover Stopped Service\n"
 				+"	7 Close Service Permanently\n"
 				+"	0 Return\n"
 				+"	-----------------------------"
 				);	
 		
-		int choice = Start.choose(sc, 5);
+		int choice = choose(sc, 5);
 
 		switch(choice) {
 			case 1:
@@ -112,7 +113,7 @@ public class Managing {
             return service;
         }
 
-        int choice = Start.choose(sc, size);
+        int choice = choose(sc, size);
         service= serviceList.get(choice-1);
         System.out.println(choice +". service name: "+ service.getStdName()+"sid: "+service.getSid());
         jedis.set("service",gson.toJson(service));
@@ -157,7 +158,7 @@ public class Managing {
 			str = br.readLine();
 			if("".equals(str)) {
 				break;
-			}else if(Address.isValidPubKey(str)) {
+			}else if(KeyTools.isValidPubKey(str)) {
 					data.setPubKeyAdmin(str);
 					break;
 			}else {
@@ -189,7 +190,7 @@ public class Managing {
 			if(!("".equals(str))) {
 				try {
 					flo = Float.valueOf(str);
-					params.setPricePerRequest(flo);
+					params.setPricePerRequest(String.valueOf(flo));
 					break;
 				}catch(Exception e) {
 					System.out.println("It isn't a number. Input again:");
@@ -204,7 +205,7 @@ public class Managing {
 			if(!("".equals(str))) {
 				try {
 					flo = Float.valueOf(str);
-					params.setMinPayment(flo);
+					params.setMinPayment(String.valueOf(flo));
 					break;
 				}catch(Exception e) {
 					System.out.println("It isn't a number. Input again:");
@@ -362,7 +363,7 @@ public class Managing {
 			}else if(str.equals("d")) {
 				data.setPubKeyAdmin(null);
 				break;
-			}else if(Address.isValidPubKey(str)) {
+			}else if(KeyTools.isValidPubKey(str)) {
 				data.setPubKeyAdmin(str);
 				break;
 			}else {
@@ -438,7 +439,7 @@ public class Managing {
 			if(!"".equals(str)) {
 				try {
 					flo = Float.valueOf(str);
-					params.setPricePerRequest(flo);
+					params.setPricePerRequest(String.valueOf(flo));
 					break;
 				}catch(NumberFormatException e) {
 					System.out.println("It isn't a number. Input again:");
@@ -454,7 +455,7 @@ public class Managing {
 			if(!"".equals(str)) {
 				try {
 					flo = Float.valueOf(str);
-					params.setMinPayment(flo);
+					params.setMinPayment(String.valueOf(flo));
 					break;
 				}catch(NumberFormatException e) {
 					System.out.println("It isn't a number. Input again:");

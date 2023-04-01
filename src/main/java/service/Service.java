@@ -24,6 +24,7 @@ public class Service {
 	private boolean active;
 	private boolean closed;
 	private String closeStatement;
+
 	public String getSid() {
 		return sid;
 	}

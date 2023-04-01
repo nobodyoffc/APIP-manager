@@ -1,5 +1,21 @@
-package start;
+package startApipManager;
 
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
+import co.elastic.clients.elasticsearch.indices.DeleteIndexResponse;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import es.StartClient;
+import order.OrderOpReturn;
+import order.OrderOpReturnData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
+import service.Managing;
+import service.Service;
+import start.Configer;
 
 import java.io.*;
 import java.util.HashSet;
@@ -8,21 +24,10 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
-import co.elastic.clients.elasticsearch.indices.DeleteIndexResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import service.Managing;
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import esClient.StartClient;
-import redis.clients.jedis.Jedis;
-
 
 public class Start {
 
-	private static final Logger log = LoggerFactory.getLogger(Start.class);
+	private static final Logger log = LoggerFactory.getLogger(start.Start.class);
 	private static StartClient startClient = new StartClient();
 
 	public static void main(String[] args)throws Exception{
@@ -31,7 +36,7 @@ public class Start {
 		System.out.println(" << APIP service >> pre version 2023.1.24\n"	);
 		Scanner sc = new Scanner(System.in);
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		Configer configer = new Configer();
+		start.Configer configer = new start.Configer();
 		Jedis jedis = null;
 
 		boolean end = false;
@@ -50,17 +55,19 @@ public class Start {
 					+"	3 Run Service\n"
 					+"	4 Stop Service\n"
 					+"	5 Recreate Order Index\n"
-					+"	6 Config ES\n"
+					+"	6 Set parameters\n"
+					+"	7 How to buy this service?\n"
 					+"	0 Exit\n"
 					+ "	-----------------------------"
 					);
 
-			int choice = choose(sc,6);
+			int choice = choose(sc,7);
 
 			switch(choice) {
 				case 1: //Manage service
 					if(esClient==null) {
 						esClient = startClient.createEsClient(configer, sc, br,esClient);
+
 					}
 					Managing serviceManager= new Managing();
 					if(jedis==null)
@@ -99,7 +106,19 @@ public class Start {
 					recreateOrderIndex(esClient);
 					break;
 				case 6:
-					new Configer().configEs(sc,br);
+					new start.Configer().configEs(sc,br);
+					break;
+				case 7:
+					System.out.println("Anyone can send a freecash TX with following json in Op_Return to buy your service:" +
+							"\n--------");
+					String sidStr = new Jedis().get("service");
+					Gson gson = new GsonBuilder().setPrettyPrinting().create();
+					Service service = gson.fromJson(sidStr, Service.class);
+					System.out.println(gson.toJson(getOrder(service.getSid()))+
+							"\n--------" +
+							"\nMake sure the 'sid' is your service id. " +
+							"\nAny key to continue...");
+					br.readLine();
 					break;
 				case 0:
 					if(esClient!=null)startClient.shutdownClient();
@@ -114,6 +133,20 @@ public class Start {
 		startClient.shutdownClient();
 		sc.close();
 		br.close();
+	}
+
+	private static OrderOpReturn getOrder(String sid){
+		OrderOpReturn orderOpReturn = new OrderOpReturn();
+		OrderOpReturnData data = new OrderOpReturnData();
+		data.setOp("buy");
+		data.setSid(sid);
+		orderOpReturn.setData(data);
+		orderOpReturn.setType("APIP");
+		orderOpReturn.setSn("1");
+		orderOpReturn.setPid("");
+		orderOpReturn.setName("OpenAPI");
+		orderOpReturn.setVer("1");
+		return orderOpReturn;
 	}
 
 	private static void recreateOrderIndex(ElasticsearchClient esClient) throws InterruptedException {
@@ -153,7 +186,7 @@ public class Start {
 	}
 
 
-	private static void runService(Configer configer, Jedis jedis,BufferedReader br) throws IOException {
+	private static void runService(start.Configer configer, Jedis jedis, BufferedReader br) throws IOException {
 		// TODO Auto-generated method stub
 		System.out.println("Input the sid of your service. Press enter if you have set it in redis:");
 		String str = br.readLine();
@@ -177,12 +210,12 @@ public class Start {
 
 	public static Jedis getJedis(Configer configer, Scanner sc, BufferedReader br) throws IOException {
 		// TODO Auto-generated method stub
-		
-		if(configer.getRedisPort() ==0 || configer.getRedisHost()==null) configer.configRedis(sc, br);	
-		
+
+		if(configer.getRedisPort() ==0 || configer.getRedisHost()==null) configer.configRedis(sc, br);
+
 		Jedis jedis = new Jedis(configer.getRedisHost(), configer.getRedisPort());
 		//jedis.auth("xxxx");
-		
+
 		int count = 0;
 
 		while(true) {
@@ -190,6 +223,8 @@ public class Start {
 				String ping = jedis.ping();
 		        if (ping.equals("PONG")) {
 		            System.out.println("Redis is ready.");
+		            jedis.set("esIp",configer.getEsIp());
+		            jedis.set("esPort",String.valueOf(configer.getEsPort()));
 		            return jedis;
 		        }else {
 		        	System.out.println("Failed to startup redis.");
