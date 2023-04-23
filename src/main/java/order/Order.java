@@ -4,19 +4,19 @@ public class Order {
     private String id;//cash id
     private String fromAddr;
     private String toAddr;
-    private String[] vias;
+    private String[] via;
     private long amount;
     private long time;
     private String txid;
     private long txIndex;
     private long height;
 
-    public String[] getVias() {
-        return vias;
+    public String[] getVia() {
+        return via;
     }
 
-    public void setVias(String[] vias) {
-        this.vias = vias;
+    public void setVia(String[] via) {
+        this.via = via;
     }
 
     public String getId() {

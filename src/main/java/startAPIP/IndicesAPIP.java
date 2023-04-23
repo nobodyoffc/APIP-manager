@@ -1,4 +1,4 @@
-package startApipManager;
+package startAPIP;
 
 public class IndicesAPIP {
 

@@ -1,23 +1,21 @@
 package service;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch.core.GetResponse;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import fcTools.KeyTools;
+import menu.Menu;
+import redis.clients.jedis.Jedis;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
-import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch.core.GetResponse;
-import redis.clients.jedis.Jedis;
-import fcTools.KeyTools;
-
-import static startApipManager.Start.choose;
 
 
 public class Managing {
@@ -25,43 +23,49 @@ public class Managing {
 	private static final String ServiceIndex = "service";
 
 	public void menu(ElasticsearchClient esClient, Scanner sc,BufferedReader br, Jedis jedis) throws IOException {
-		
-		System.out.println(
-				"	-----------------------------\n"
-				+"	Choose\n"
-				+"	-----------------------------\n"
-				+"	1 Find your service\n"
-				+"	2 Publish New Service\n"
-				+"	3 Update Existed Service\n"
-				+"	4 Reload service to redis\n"
-				+"	5 Stop Existed Service\n"
-				+"	6 Recover Stopped Service\n"
-				+"	7 Close Service Permanently\n"
-				+"	0 Return\n"
-				+"	-----------------------------"
-				);	
-		
-		int choice = choose(sc, 5);
+
+        Menu menu = new Menu();
+
+        ArrayList<String> menuItemList = new ArrayList<>();
+		menuItemList.add("Show my service");
+        menuItemList.add("Find my service");
+        menuItemList.add("Publish New Service");
+        menuItemList.add("Update Existed Service");
+        menuItemList.add("Reload service to redis");
+        menuItemList.add("Stop Existed Service");
+        menuItemList.add("Recover Stopped Service");
+        menuItemList.add("Close Service Permanently");
+
+        menu.add(menuItemList);
+        menu.show();
+
+        int choice = menu.choose(sc);
 
 		switch(choice) {
 			case 1:
-				getService(jedis,esClient,sc,br);
+				if(jedis.get("service")==null){
+					System.out.println("No service set yet.");
+				}
+				System.out.println(jedis.get("service"));
 				break;
 			case 2:
-				publish(br, jedis);
+				getService(jedis,esClient,sc,br);
 				break;
 			case 3:
-				update(esClient,br, jedis);
+				publish(br, jedis);
 				break;
 			case 4:
-				reloadService(esClient,jedis);
+				update(esClient,br, jedis);
+				break;
 			case 5:
+				reloadService(esClient,jedis);
+			case 6:
 				stop(esClient, br);
 				break;
-			case 6:
+			case 7:
 				recover(esClient, br);
 				break;
-			case 7:
+			case 8:
 				System.out.println("Do you really want to give up the service forever? y or n:");
 				String delete = sc.next();
 				if (delete.equals("y")) {
@@ -113,7 +117,13 @@ public class Managing {
             return service;
         }
 
-        int choice = choose(sc, size);
+
+        while (!sc.hasNextInt()) {
+            System.out.println("Input a integer please:");
+            sc.next();
+        }
+        int choice = sc.nextInt();
+
         service= serviceList.get(choice-1);
         System.out.println(choice +". service name: "+ service.getStdName()+"sid: "+service.getSid());
         jedis.set("service",gson.toJson(service));
@@ -130,8 +140,6 @@ public class Managing {
 		Data data = new Data();
 		
 		Params params = new Params();
-
-		Service service = new Service();
 		
 		data.setOp("publish");
 		
@@ -444,7 +452,7 @@ public class Managing {
 				}catch(NumberFormatException e) {
 					System.out.println("It isn't a number. Input again:");
 				}
-			}
+			}else break;
 		}
 
 		
@@ -460,7 +468,7 @@ public class Managing {
 				}catch(NumberFormatException e) {
 					System.out.println("It isn't a number. Input again:");
 				}
-			}
+			}else break;
 		}
 		
 		System.out.println("\nThe expiring days of the session key of your service: "+params.getSessionDays());
@@ -475,7 +483,7 @@ public class Managing {
 				}catch(NumberFormatException e) {
 					System.out.println("It isn't a integer. Input again:");
 				}
-			}
+			}else break;
 		}
 		data.setParams(params);
 			

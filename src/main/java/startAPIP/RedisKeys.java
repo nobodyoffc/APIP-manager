@@ -1,4 +1,4 @@
-package startApipManager;
+package startAPIP;
 
 public class RedisKeys {
 
@@ -13,6 +13,8 @@ public class RedisKeys {
     public static final String OrderLastBlockId = "orderLastBlockId";
     public static final String BestHeight = "bestHeight";
     public static final String FreecashRPC = "freecashrpc";
-    public static final String Es = "es";
+    public static final String Es = "src/test/es";
 
+    public static String ScanMempool = "scanMempool";
+    public static String NPrice = "nPrice";
 }
